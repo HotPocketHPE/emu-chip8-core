@@ -1,7 +1,7 @@
 use rand::Rng;
 use super::cpu::CPUState;
 
-const OUTER_FUNC_TABLE: [fn(&mut CPUState); 16] = [
+pub const OUTER_FUNC_TABLE: [fn(&mut CPUState); 0x10] = [
     op_0_innerlookup,
     op_1nnn,
     op_2nnn,
@@ -230,14 +230,21 @@ fn op_fx33(cpu: &mut CPUState) {
 
 fn op_fx55(cpu: &mut CPUState) {
     for i in 0..=cpu.d_x() {
-        cpu.write_mem(cpu.i + (i as u16), cpu.v[i]);
+        {
+            let addr = cpu.i + (i as u16);
+            let val = cpu.v[i];
+            cpu.mem.write(addr, val)
+        };
     }
     cpu.pc += 2;
 }
 
 fn op_fx65(cpu: &mut CPUState) {
     for i in 0..=cpu.d_x() {
-        cpu.v[i] = cpu.read_mem(cpu.i + (i as u16));
+        cpu.v[i] = {
+            let addr = cpu.i + (i as u16);
+            cpu.mem.read(addr)
+        };
     }
     cpu.pc += 2;
 }
