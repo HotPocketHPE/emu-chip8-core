@@ -36,7 +36,8 @@ fn op_0nnn(cpu: &mut CPUState) {
 
 fn op_00E0(cpu: &mut CPUState) {
     //CLS
-    todo!()
+    cpu.disp.clear();
+    cpu.pc += 2;
 }
 
 fn op_1nnn(cpu: &mut CPUState) {
@@ -147,7 +148,7 @@ fn op_8xy7(cpu: &mut CPUState) {
 }
 
 fn op_8xyE(cpu: &mut CPUState) {
-    cpu.v[0xF] = (cpu.v[cpu.d_x()] & 0b10000000) >> 8;
+    cpu.v[0xF] = (cpu.v[cpu.d_x()] & 0b10000000) >> 7;
     cpu.v[cpu.d_x()] = cpu.v[cpu.d_x()] << 1;
     cpu.pc += 2;
 }
@@ -173,6 +174,11 @@ fn op_Cxkk(cpu: &mut CPUState) {
 
 fn op_Dxyn(cpu: &mut CPUState) {
     //draw sprite
+    let mut sprite_mem: Vec<u8> = Vec::with_capacity(cpu.d_n() as usize);
+    for mem_offset in 0..cpu.d_n() as u16 {
+        sprite_mem.push(cpu.mem.read(cpu.i + mem_offset));
+    }
+    cpu.disp.draw(&sprite_mem, cpu.d_x(), cpu.d_y());
     cpu.pc += 2;
 }
 

@@ -1,4 +1,4 @@
-use super::{instructions::OUTER_FUNC_TABLE, memory::Memory};
+use super::{instructions::OUTER_FUNC_TABLE, memory::Memory, display::DisplayData};
 
 pub struct CPUState {
     ///Program Counter
@@ -14,10 +14,16 @@ pub struct CPUState {
     ///Sound Timer
     pub st: u8,
     ///Memory
-    pub mem: Memory
+    pub mem: Memory,
+    ///Display Data
+    pub disp: DisplayData
 }
 
 impl CPUState {
+    pub fn new(mem: Memory, disp: DisplayData) -> CPUState {
+        CPUState { pc: 0x200, i: 0, v: [0; 0x10], sp: 0, dt: 0, st: 0, mem, disp }
+    }
+
     pub fn get_opcode(&self) -> u16 {
         (self.mem.read(self.pc) as u16) << 8 & (self.mem.read(self.pc+1) as u16)
     }
@@ -46,5 +52,6 @@ impl CPUState {
         let highest_nibble = (self.get_opcode() & 0xF000) >> 12;
         OUTER_FUNC_TABLE[highest_nibble as usize](self);
     }
+    
 }
 

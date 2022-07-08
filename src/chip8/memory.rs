@@ -5,7 +5,7 @@ pub struct Memory {
 }
 
 impl Memory {
-    fn new_array() -> Memory {
+    pub fn new_array() -> Memory {
         Memory {
             mem: [0; MEMSIZE],
         }
