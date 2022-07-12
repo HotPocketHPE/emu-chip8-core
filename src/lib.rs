@@ -1,14 +1,16 @@
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
-use self::{cpu::CPUState, display::DisplayData, memory::Memory};
+use cpu::CPUState;
+use display::DisplayData;
+use memory::Memory;
 
-mod cpu;
-mod keyboard;
-mod display;
-mod instructions;
-mod memory;
+pub mod cpu;
+pub mod display;
+pub mod memory;
+pub mod keyboard;
+pub mod instructions;
 
-fn create_machine() {
+pub fn create_machine() {
     let state = CPUState::new(Memory::new_array(), DisplayData::new_64x32());
 }
 

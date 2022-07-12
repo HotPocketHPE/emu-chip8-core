@@ -1,27 +1,23 @@
+use crate::keyboard::KeyboardState;
+
 use super::{instructions::OUTER_FUNC_TABLE, memory::Memory, display::DisplayData};
 
 pub struct CPUState {
-    ///Program Counter
     pub pc: u16,
-    ///Index Register
     pub i: u16,
-    ///Registers
     pub v: [u8; 0x10],
-    ///Stack Pointer
     pub sp: u8,
-    ///Delay Timer
     pub dt: u8,
-    ///Sound Timer
     pub st: u8,
-    ///Memory
+
     pub mem: Memory,
-    ///Display Data
-    pub disp: DisplayData
+    pub disp: DisplayData,
+    pub kbstate: KeyboardState,
 }
 
 impl CPUState {
     pub fn new(mem: Memory, disp: DisplayData) -> CPUState {
-        CPUState { pc: 0x200, i: 0, v: [0; 0x10], sp: 0, dt: 0, st: 0, mem, disp }
+        CPUState { pc: 0x200, i: 0, v: [0; 0x10], sp: 0, dt: 0, st: 0, mem, disp, kbstate: KeyboardState::default() }
     }
 
     pub fn get_opcode(&self) -> u16 {

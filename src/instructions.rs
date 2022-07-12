@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use rand::Rng;
 use super::cpu::CPUState;
 
@@ -47,6 +49,7 @@ fn op_1nnn(cpu: &mut CPUState) {
 
 fn op_2nnn(cpu: &mut CPUState) {
     //CALL
+    todo!()
 }
 
 fn skip_next_instr_if(cpu: &mut CPUState, cond: fn(&CPUState) -> bool) {
@@ -192,10 +195,12 @@ fn op_e_innerlookup(cpu: &mut CPUState) {
 
 fn op_Ex9E(cpu: &mut CPUState) {
     //skip if key pressed
+    skip_next_instr_if(cpu, |cpu| cpu.kbstate.key[cpu.d_x()])
 }
 
 fn op_ExA1(cpu: &mut CPUState) {
     //skip if key not pressed
+    skip_next_instr_if(cpu, |cpu| !cpu.kbstate.key[cpu.d_x()])
 }
 
 fn op_f_innerlookup(cpu: &mut CPUState) {
@@ -228,10 +233,12 @@ fn op_fx1e(cpu: &mut CPUState) {
 
 fn op_fx29(cpu: &mut CPUState) {
     //set I to location of Vx sprite
+    todo!()
 }
 
 fn op_fx33(cpu: &mut CPUState) {
     //store Vx as BCD in I, I+1, I+2
+    todo!()
 }
 
 fn op_fx55(cpu: &mut CPUState) {

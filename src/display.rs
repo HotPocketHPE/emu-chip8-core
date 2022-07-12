@@ -35,19 +35,29 @@ const FONT_DATA: [u8; 5*16] = [
     0xF0, 0x80, 0xF0, 0x80, 0x80
 ];
 
+#[derive(Clone)]
 pub struct DisplayData {
-    data: Vec<Vec<bool>>,
-    width: usize,
-    height: usize
+    pub data: Vec<Vec<bool>>,
+    pub width: usize,
+    pub height: usize,
+    backing_arr: Vec<u32>
 }
 
 impl DisplayData {
     fn new(width: usize, height: usize) -> DisplayData {
-        DisplayData { data: vec![vec![false; height]; width], width, height }
+        DisplayData { data: vec![vec![false; height]; width], width, height, backing_arr: vec![0; width * height] }
     }
 
     pub fn new_64x32() -> DisplayData {
         DisplayData::new(64, 32)
+    }
+
+    pub fn get_pixel(&self, x: usize, y: usize) -> bool {
+        self.backing_arr[x + y * self.width] > 0
+    }
+
+    fn set_pixel(&mut self, x: usize, y: usize, val: bool) {
+        self.backing_arr[x + y * self.width] = if val {1} else {0}
     }
 
     pub fn clear(&mut self) {
@@ -64,11 +74,12 @@ impl DisplayData {
         for i in 0..sprite_as_bools.len() {
             let x_offset = i % 8;
             let y_offset = i / 8;
-            let new_x = (x + x_offset) % self.width;
-            let new_y = (y + y_offset) % self.height;
-            let old_data = self.data[new_x][new_y];
-            self.data[new_x][new_y] ^= sprite_as_bools[i];
-            if self.data[new_x][new_y] != old_data {
+            let pixel_x = (x + x_offset) % self.width;
+            let pixel_y = (y + y_offset) % self.height;
+            let old_data = self.get_pixel(pixel_x, pixel_y);
+            let new_data = old_data ^ sprite_as_bools[i];
+            self.set_pixel(pixel_x, pixel_y, new_data);
+            if self.get_pixel(pixel_x, pixel_y) != old_data {
                 collision = true;
             }
         }
