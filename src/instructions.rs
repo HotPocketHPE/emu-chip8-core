@@ -1,7 +1,9 @@
 #![allow(non_snake_case)]
 
 use rand::Rng;
-use super::cpu::CPUState;
+
+use crate::memory::Memory;
+use crate::cpu::CPUState;
 
 pub const OUTER_FUNC_TABLE: [fn(&mut CPUState); 0x10] = [
     op_0_innerlookup,
@@ -23,10 +25,11 @@ pub const OUTER_FUNC_TABLE: [fn(&mut CPUState); 0x10] = [
 ];
 
 fn op_0_innerlookup(cpu: &mut CPUState) {
-    if cpu.d_addr() == 0x0E0 {
-        op_00E0(cpu);
-    } else {
-        op_0nnn(cpu);
+    match cpu.d_addr() {
+        0x00E0 => op_00E0(cpu),
+        0x00EE => op_00EE(cpu),
+        0x0000 => panic!("Tried to execute 0000! (Probably uninit memory) at addr {:X} {:X}", cpu.pc, cpu.get_opcode()),
+        _ => op_0nnn(cpu)
     }
 }
 
@@ -42,6 +45,13 @@ fn op_00E0(cpu: &mut CPUState) {
     cpu.pc += 2;
 }
 
+fn op_00EE(cpu: &mut CPUState) {
+    //RET
+    let addr = u16::from_be_bytes([cpu.mem.read(cpu.sp as u16), cpu.mem.read((cpu.sp+1) as u16)]);
+    cpu.sp -= 2;
+    cpu.pc = addr;
+}
+
 fn op_1nnn(cpu: &mut CPUState) {
     //JMP
     cpu.pc = cpu.d_addr();
@@ -49,7 +59,11 @@ fn op_1nnn(cpu: &mut CPUState) {
 
 fn op_2nnn(cpu: &mut CPUState) {
     //CALL
-    todo!()
+    let bytes = cpu.pc.to_be_bytes();
+    cpu.mem.write(cpu.sp as u16, bytes[0]);
+    cpu.mem.write((cpu.sp+1) as u16, bytes[1]);
+    cpu.sp += 2;
+    cpu.pc = cpu.d_addr();
 }
 
 fn skip_next_instr_if(cpu: &mut CPUState, cond: fn(&CPUState) -> bool) {
@@ -176,7 +190,8 @@ fn op_Cxkk(cpu: &mut CPUState) {
 }
 
 fn op_Dxyn(cpu: &mut CPUState) {
-    //draw sprite
+    //DRW
+    //TODO this shouldnt allocate a vec
     let mut sprite_mem: Vec<u8> = Vec::with_capacity(cpu.d_n() as usize);
     for mem_offset in 0..cpu.d_n() as u16 {
         sprite_mem.push(cpu.mem.read(cpu.i + mem_offset));
@@ -205,6 +220,8 @@ fn op_ExA1(cpu: &mut CPUState) {
 
 fn op_f_innerlookup(cpu: &mut CPUState) {
     match cpu.d_kk() {
+        0x07 => op_fx07(cpu),
+        0x0A => op_fx0A(cpu),
         0x15 => op_fx15(cpu),
         0x18 => op_fx18(cpu),
         0x1E => op_fx1e(cpu),
@@ -214,6 +231,16 @@ fn op_f_innerlookup(cpu: &mut CPUState) {
         0x65 => op_fx65(cpu),
         _ => panic!("Unknown opcode! {:X}", cpu.get_opcode())
     }
+}
+
+fn op_fx07(cpu: &mut CPUState) {
+    cpu.v[cpu.d_x()] = cpu.dt;
+    cpu.pc += 2;
+}
+
+fn op_fx0A(cpu: &mut CPUState) {
+    cpu.wait_for_keypress();
+    cpu.pc += 2;
 }
 
 fn op_fx15(cpu: &mut CPUState) {
@@ -233,12 +260,18 @@ fn op_fx1e(cpu: &mut CPUState) {
 
 fn op_fx29(cpu: &mut CPUState) {
     //set I to location of Vx sprite
-    todo!()
+    cpu.i = Memory::get_font_addr(cpu.d_x() as u8);
+    cpu.pc += 2;
 }
 
 fn op_fx33(cpu: &mut CPUState) {
     //store Vx as BCD in I, I+1, I+2
-    todo!()
+    let mut n = cpu.v[cpu.d_x()];
+    for i in 2..=0 {
+        cpu.mem.write(cpu.i + i, n % 10);
+        n = n / 10;
+    }
+    cpu.pc += 2;
 }
 
 fn op_fx55(cpu: &mut CPUState) {

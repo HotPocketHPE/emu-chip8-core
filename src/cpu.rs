@@ -1,4 +1,4 @@
-use crate::keyboard::KeyboardState;
+use crate::{keyboard::KeyboardState, memory::PROG_START_ADDR};
 
 use super::{instructions::OUTER_FUNC_TABLE, memory::Memory, display::DisplayData};
 
@@ -10,6 +10,8 @@ pub struct CPUState {
     pub dt: u8,
     pub st: u8,
 
+    waiting_for_key: bool,
+
     pub mem: Memory,
     pub disp: DisplayData,
     pub kbstate: KeyboardState,
@@ -17,11 +19,14 @@ pub struct CPUState {
 
 impl CPUState {
     pub fn new(mem: Memory, disp: DisplayData) -> CPUState {
-        CPUState { pc: 0x200, i: 0, v: [0; 0x10], sp: 0, dt: 0, st: 0, mem, disp, kbstate: KeyboardState::default() }
+        CPUState { pc: PROG_START_ADDR as u16, i: 0, v: [0; 0x10], sp: 0, dt: 0, st: 0,
+            waiting_for_key: false, mem, disp, kbstate: KeyboardState::default() }
     }
 
     pub fn get_opcode(&self) -> u16 {
-        (self.mem.read(self.pc) as u16) << 8 & (self.mem.read(self.pc+1) as u16)
+        let upper_byte = (self.mem.read(self.pc) as u16) << 8;
+        let lower_byte = self.mem.read(self.pc+1) as u16;
+        upper_byte | lower_byte
     }
 
     pub fn d_addr(&self) -> u16 {
@@ -47,6 +52,10 @@ impl CPUState {
     pub fn run_instr(&mut self) {
         let highest_nibble = (self.get_opcode() & 0xF000) >> 12;
         OUTER_FUNC_TABLE[highest_nibble as usize](self);
+    }
+
+    pub fn wait_for_keypress(&mut self) {
+        self.waiting_for_key = true;
     }
     
 }
