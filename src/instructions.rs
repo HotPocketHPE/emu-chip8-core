@@ -36,7 +36,7 @@ fn op_0_innerlookup(cpu: &mut CPUState) {
 fn op_0nnn(cpu: &mut CPUState) {
     //SYS
     //call to native machine code, unimplemented
-    panic!("SYS call to native machine attempted! {}", cpu.get_opcode());
+    //panic!("SYS call to native machine attempted! {:X} at addr {:X}", cpu.get_opcode(), cpu.pc);
 }
 
 fn op_00E0(cpu: &mut CPUState) {
@@ -47,9 +47,9 @@ fn op_00E0(cpu: &mut CPUState) {
 
 fn op_00EE(cpu: &mut CPUState) {
     //RET
-    let addr = u16::from_be_bytes([cpu.mem.read(cpu.sp as u16), cpu.mem.read((cpu.sp+1) as u16)]);
+    let addr = u16::from_be_bytes([cpu.mem.read((cpu.sp-1) as u16), cpu.mem.read(cpu.sp as u16)]);
     cpu.sp -= 2;
-    cpu.pc = addr;
+    cpu.pc = addr + 2;
 }
 
 fn op_1nnn(cpu: &mut CPUState) {
@@ -59,11 +59,12 @@ fn op_1nnn(cpu: &mut CPUState) {
 
 fn op_2nnn(cpu: &mut CPUState) {
     //CALL
-    let bytes = cpu.pc.to_be_bytes();
-    cpu.mem.write(cpu.sp as u16, bytes[0]);
-    cpu.mem.write((cpu.sp+1) as u16, bytes[1]);
     cpu.sp += 2;
+    let bytes = cpu.pc.to_be_bytes();
+    cpu.mem.write((cpu.sp-1) as u16, bytes[0]);
+    cpu.mem.write((cpu.sp) as u16, bytes[1]);
     cpu.pc = cpu.d_addr();
+    println!("{}", cpu.reg_states());
 }
 
 fn skip_next_instr_if(cpu: &mut CPUState, cond: fn(&CPUState) -> bool) {
@@ -191,12 +192,8 @@ fn op_Cxkk(cpu: &mut CPUState) {
 
 fn op_Dxyn(cpu: &mut CPUState) {
     //DRW
-    //TODO this shouldnt allocate a vec
-    let mut sprite_mem: Vec<u8> = Vec::with_capacity(cpu.d_n() as usize);
-    for mem_offset in 0..cpu.d_n() as u16 {
-        sprite_mem.push(cpu.mem.read(cpu.i + mem_offset));
-    }
-    cpu.disp.draw(&sprite_mem, cpu.d_x(), cpu.d_y());
+    let sprite_mem = &cpu.mem.slice()[cpu.i as usize..(cpu.i+cpu.d_n() as u16) as usize];
+    cpu.disp.draw(sprite_mem, cpu.v[cpu.d_x()] as usize, cpu.v[cpu.d_y()] as usize);
     cpu.pc += 2;
 }
 
@@ -239,8 +236,10 @@ fn op_fx07(cpu: &mut CPUState) {
 }
 
 fn op_fx0A(cpu: &mut CPUState) {
-    cpu.wait_for_keypress();
-    cpu.pc += 2;
+    if let Some(k) = cpu.kbstate.just_pressed {
+        cpu.v[cpu.d_x()] = k;
+        cpu.pc += 2;
+    }  
 }
 
 fn op_fx15(cpu: &mut CPUState) {
@@ -267,7 +266,7 @@ fn op_fx29(cpu: &mut CPUState) {
 fn op_fx33(cpu: &mut CPUState) {
     //store Vx as BCD in I, I+1, I+2
     let mut n = cpu.v[cpu.d_x()];
-    for i in 2..=0 {
+    for i in (0..=2).rev() {
         cpu.mem.write(cpu.i + i, n % 10);
         n = n / 10;
     }
@@ -275,12 +274,10 @@ fn op_fx33(cpu: &mut CPUState) {
 }
 
 fn op_fx55(cpu: &mut CPUState) {
-    for i in 0..=cpu.d_x() {
-        {
-            let addr = cpu.i + (i as u16);
-            let val = cpu.v[i];
-            cpu.mem.write(addr, val)
-        };
+    for i in 0..=cpu.d_x() { 
+        let addr = cpu.i + (i as u16);
+        let val = cpu.v[i];
+        cpu.mem.write(addr, val)
     }
     cpu.pc += 2;
 }

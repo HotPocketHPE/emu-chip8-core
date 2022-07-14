@@ -51,7 +51,7 @@ fn matches_opcode(opcode: u16, n1: u8, n2: Option<u8>, n3: Option<u8>, n4: Optio
             return false;
         }
     }
-    if let Some(n) = n3 {
+    if let Some(n) = n4 {
         if n as u16 != (opcode & 0x000F) {
             return false;
         }

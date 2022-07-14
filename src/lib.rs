@@ -46,14 +46,31 @@ impl Machine {
         }
     }
 
+    pub fn press_key(&mut self, key: u8) {
+        self.cpu_state.kbstate.key[key as usize] = true;
+        self.cpu_state.kbstate.just_pressed = Some(key);
+    }
+
+    pub fn release_key(&mut self, key: u8) {
+        self.cpu_state.kbstate.key[key as usize] = false;
+    }
+
     pub fn display_data(&self) -> &DisplayData {
         &self.cpu_state.disp
+    }
+
+    pub fn current_opcode(&self) -> u16 {
+        self.cpu_state.get_opcode()
     }
 }
 
 //TODO this should return string
 pub fn disassemble_program(program: &[u8]) {
-    let mut i = 0;
+    disassemble_program_at(program, 0)
+}
+
+pub fn disassemble_program_at(program: &[u8], start: usize) {
+    let mut i = start;
     while i < program.len() {
         if i == program.len()-1 {
             println!("{:X} | Standalone byte {:X}", i+PROG_START_ADDR, program[i]);

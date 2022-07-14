@@ -1,4 +1,4 @@
-use crate::{keyboard::KeyboardState, memory::PROG_START_ADDR};
+use crate::{keyboard::KeyboardState, memory::{PROG_START_ADDR, STACK_START_ADDR}};
 
 use super::{instructions::OUTER_FUNC_TABLE, memory::Memory, display::DisplayData};
 
@@ -10,8 +10,6 @@ pub struct CPUState {
     pub dt: u8,
     pub st: u8,
 
-    waiting_for_key: bool,
-
     pub mem: Memory,
     pub disp: DisplayData,
     pub kbstate: KeyboardState,
@@ -19,8 +17,17 @@ pub struct CPUState {
 
 impl CPUState {
     pub fn new(mem: Memory, disp: DisplayData) -> CPUState {
-        CPUState { pc: PROG_START_ADDR as u16, i: 0, v: [0; 0x10], sp: 0, dt: 0, st: 0,
-            waiting_for_key: false, mem, disp, kbstate: KeyboardState::default() }
+        CPUState { pc: PROG_START_ADDR as u16, i: 0, v: [0; 0x10], sp: STACK_START_ADDR as u8, dt: 0, st: 0,
+            mem, disp, kbstate: KeyboardState::default() }
+    }
+
+    pub fn reg_states(&self) -> String {
+        let mut s = String::new();
+        for i in 0..self.v.len() {
+            s += &format!("V{}: {} ", i, self.v[i]);
+        }
+        s += &format!("\nPC: {:X} I: {:X} SP: {:X} DT: {:X} ST: {:X}", self.pc, self.i, self.sp, self.dt, self.st);
+        return s;
     }
 
     pub fn get_opcode(&self) -> u16 {
@@ -50,12 +57,10 @@ impl CPUState {
     }
 
     pub fn run_instr(&mut self) {
+        self.disp.updated_this_cycle = false;
         let highest_nibble = (self.get_opcode() & 0xF000) >> 12;
         OUTER_FUNC_TABLE[highest_nibble as usize](self);
-    }
-
-    pub fn wait_for_keypress(&mut self) {
-        self.waiting_for_key = true;
+        self.kbstate.just_pressed = None;
     }
     
 }
