@@ -3,7 +3,6 @@ pub const PROG_START_ADDR: usize = 0x200;
 pub const STACK_START_ADDR: usize = 0x000;
 const STACK_SIZE: usize = 0x10 * 2;
 const FONT_START_ADDR: usize = STACK_START_ADDR + STACK_SIZE;
-
 const FONT_LETTER_SIZE: usize = 5;
 const FONT_DATA: [u8; FONT_LETTER_SIZE*16] = [
     //0
@@ -84,7 +83,7 @@ impl Memory {
     }
 
     pub fn get_font_addr(num: u8) -> u16 {
-        (FONT_START_ADDR + (num as usize * FONT_LETTER_SIZE)).try_into().unwrap()
+        (FONT_START_ADDR + (num as usize * FONT_LETTER_SIZE)) as u16
     }
 }
 

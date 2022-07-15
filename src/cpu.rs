@@ -13,12 +13,14 @@ pub struct CPUState {
     pub mem: Memory,
     pub disp: DisplayData,
     pub kbstate: KeyboardState,
+
+    pub idle_cycles: u32
 }
 
 impl CPUState {
     pub fn new(mem: Memory, disp: DisplayData) -> CPUState {
         CPUState { pc: PROG_START_ADDR as u16, i: 0, v: [0; 0x10], sp: STACK_START_ADDR as u8, dt: 0, st: 0,
-            mem, disp, kbstate: KeyboardState::default() }
+            mem, disp, kbstate: KeyboardState::new() , idle_cycles: 0}
     }
 
     pub fn reg_states(&self) -> String {
@@ -37,31 +39,49 @@ impl CPUState {
     }
 
     pub fn d_addr(&self) -> u16 {
-        self.get_opcode() & 0x0FFF
+        nnn(self.get_opcode())
     }
 
     pub fn d_n(&self) -> u8 {
-        (self.get_opcode() & 0x000F) as u8
+        n(self.get_opcode())
     }
 
     pub fn d_x(&self) -> usize {
-        ((self.get_opcode() & 0x0F00) >> 8) as usize
+        x(self.get_opcode()) as usize
     }
 
     pub fn d_y(&self) -> usize {
-        ((self.get_opcode() & 0x00F0) >> 4) as usize
+        y(self.get_opcode()) as usize
     }
 
     pub fn d_kk(&self) -> u8 {
-        (self.get_opcode() & 0x00FF) as u8
+        kk(self.get_opcode())
     }
 
     pub fn run_instr(&mut self) {
-        self.disp.updated_this_cycle = false;
         let highest_nibble = (self.get_opcode() & 0xF000) >> 12;
         OUTER_FUNC_TABLE[highest_nibble as usize](self);
-        self.kbstate.just_pressed = None;
     }
     
+}
+
+pub fn nnn(opcode: u16) -> u16 {
+    opcode & 0x0FFF
+}
+
+pub fn x(opcode: u16) -> u8 {
+    ((opcode & 0x0F00) >> 8) as u8
+}
+
+pub fn y(opcode: u16) -> u8 {
+    ((opcode & 0x00F0) >> 4) as u8
+}
+
+pub fn n(opcode: u16) -> u8 {
+    (opcode & 0x000F) as u8
+}
+
+pub fn kk(opcode: u16) -> u8 {
+    (opcode & 0x00FF) as u8
 }
 

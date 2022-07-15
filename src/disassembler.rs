@@ -1,3 +1,5 @@
+use crate::cpu::{nnn, x, kk, y, n};
+
 
 pub fn disassemble_opcode(opcode: u16) -> Result<String, String> {
     match opcode {
@@ -35,7 +37,7 @@ pub fn disassemble_opcode(opcode: u16) -> Result<String, String> {
         _ if matches_opcode(opcode, 0xF, None, Some(0x3), Some(0x3)) => Ok(format!("LD B V{:X}", x(opcode))),
         _ if matches_opcode(opcode, 0xF, None, Some(0x5), Some(0x5)) => Ok(format!("LD [I] V{:X}", x(opcode))),
         _ if matches_opcode(opcode, 0xF, None, Some(0x6), Some(0x5)) => Ok(format!("LD V{:X} [I]", x(opcode))),
-        _ => Err(format!("Unknown opcode! {:X}", opcode))
+        _ => Err(format!("{:X} | Unknown opcode (probably data)", opcode))
     }
 }
 
@@ -59,22 +61,3 @@ fn matches_opcode(opcode: u16, n1: u8, n2: Option<u8>, n3: Option<u8>, n4: Optio
     return true;
 }
 
-fn nnn(opcode: u16) -> u16 {
-    opcode & 0x0FFF
-}
-
-fn x(opcode: u16) -> u8 {
-    ((opcode & 0x0F00) >> 8) as u8
-}
-
-fn y(opcode: u16) -> u8 {
-    ((opcode & 0x00F0) >> 4) as u8
-}
-
-fn n(opcode: u16) -> u8 {
-    (opcode & 0x000F) as u8
-}
-
-fn kk(opcode: u16) -> u8 {
-    (opcode & 0x00FF) as u8
-}

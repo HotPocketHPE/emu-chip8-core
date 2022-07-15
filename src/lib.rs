@@ -11,6 +11,7 @@ pub mod memory;
 pub mod keyboard;
 pub mod instructions;
 mod disassembler;
+pub mod config;
 
 pub struct Machine {
     cpu_state: CPUState,
@@ -35,11 +36,11 @@ impl Machine {
 
         self.cpu_t += dur;
         self.timer_regs_t += dur;
-        if self.cpu_t > cpu_instr_dur {
+        while self.cpu_t > cpu_instr_dur {
             self.cpu_state.run_instr();
             self.cpu_t -= cpu_instr_dur;
         }
-        if self.timer_regs_t > timer_regs_dur {
+        while self.timer_regs_t > timer_regs_dur {
             if self.cpu_state.dt > 0 { self.cpu_state.dt -= 1; }
             if self.cpu_state.st > 0 { self.cpu_state.st -= 1; }
             self.timer_regs_t -= timer_regs_dur;
@@ -47,12 +48,11 @@ impl Machine {
     }
 
     pub fn press_key(&mut self, key: u8) {
-        self.cpu_state.kbstate.key[key as usize] = true;
-        self.cpu_state.kbstate.just_pressed = Some(key);
+        self.cpu_state.kbstate.press_key(key);
     }
 
     pub fn release_key(&mut self, key: u8) {
-        self.cpu_state.kbstate.key[key as usize] = false;
+        self.cpu_state.kbstate.release_key(key);
     }
 
     pub fn display_data(&self) -> &DisplayData {
@@ -64,23 +64,20 @@ impl Machine {
     }
 }
 
-//TODO this should return string
-pub fn disassemble_program(program: &[u8]) {
-    disassemble_program_at(program, 0)
-}
-
-pub fn disassemble_program_at(program: &[u8], start: usize) {
+pub fn disassemble_program_at(program: &[u8], start: usize) -> String {
+    let mut s = String::new();
     let mut i = start;
     while i < program.len() {
         if i == program.len()-1 {
-            println!("{:X} | Standalone byte {:X}", i+PROG_START_ADDR, program[i]);
+            s.push_str(&format!("{:X} | Standalone byte {:X}\n", i+PROG_START_ADDR, program[i]));
             break;
         }
         let opcode = ((program[i] as u16) << 8) | (program[i+1] as u16);
         match disassemble_opcode(opcode) {
-            Ok(s) => println!("{:X} | {:X} | {}", i+PROG_START_ADDR, opcode, s),
-            Err(s) => { println!("{:X} | {}", i+PROG_START_ADDR, s); break; },
+            Ok(s_opcode) => s.push_str(&format!("{:X} | {:X} | {}\n", i+PROG_START_ADDR, opcode, s_opcode)),
+            Err(s_opcode) => { s.push_str(&format!("{:X} | {}\n", i+PROG_START_ADDR, s_opcode)); break; },
         }
         i += 2;
     }
+    return s;
 }
