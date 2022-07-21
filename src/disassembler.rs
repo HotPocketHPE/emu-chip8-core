@@ -1,5 +1,37 @@
-use crate::cpu::{nnn, x, kk, y, n};
+use crate::{
+    cpu::{kk, n, nnn, x, y},
+    memory::PROG_START_ADDR,
+};
 
+pub fn disassemble_program_at(program: &[u8], start: usize) -> String {
+    let mut s = String::new();
+    let mut i = start;
+    while i < program.len() {
+        if i == program.len() - 1 {
+            s.push_str(&format!(
+                "{:X} | Standalone byte {:X}\n",
+                i + PROG_START_ADDR,
+                program[i]
+            ));
+            break;
+        }
+        let opcode = u16::from_be_bytes([program[i], program[i + 1]]);
+        match disassemble_opcode(opcode) {
+            Ok(s_opcode) => s.push_str(&format!(
+                "{:X} | {:X} | {}\n",
+                i + PROG_START_ADDR,
+                opcode,
+                s_opcode
+            )),
+            Err(s_opcode) => {
+                s.push_str(&format!("{:X} | {}\n", i + PROG_START_ADDR, s_opcode));
+                break;
+            }
+        }
+        i += 2;
+    }
+    return s;
+}
 
 pub fn disassemble_opcode(opcode: u16) -> Result<String, String> {
     match opcode {
@@ -25,7 +57,7 @@ pub fn disassemble_opcode(opcode: u16) -> Result<String, String> {
         _ if matches_opcode(opcode, 0xA, None, None, None) => Ok(format!("LD I {:X}", nnn(opcode))),
         _ if matches_opcode(opcode, 0xB, None, None, None) => Ok(format!("JP V0 {:X}", nnn(opcode))),
         _ if matches_opcode(opcode, 0xC, None, None, None) => Ok(format!("RND V{:X} {:X}", x(opcode), kk(opcode))),
-        _ if matches_opcode(opcode, 0xD, None, None, None) => Ok(format!("DRW V{:X} V{:X} {:X}", x(opcode), y(opcode), n(opcode))),
+        _ if matches_opcode(opcode, 0xD, None, None, None) => Ok(format!("DRW V{:X} V{:X} {:X}",x(opcode), y(opcode), n(opcode))),
         _ if matches_opcode(opcode, 0xE, None, Some(0x9), Some(0xE)) => Ok(format!("SKP {:X}", x(opcode))),
         _ if matches_opcode(opcode, 0xE, None, Some(0xA), Some(0x1)) => Ok(format!("SKNP {:X}", x(opcode))),
         _ if matches_opcode(opcode, 0xF, None, Some(0x0), Some(0x7)) => Ok(format!("LD V{:X} DT", x(opcode))),
@@ -37,12 +69,14 @@ pub fn disassemble_opcode(opcode: u16) -> Result<String, String> {
         _ if matches_opcode(opcode, 0xF, None, Some(0x3), Some(0x3)) => Ok(format!("LD B V{:X}", x(opcode))),
         _ if matches_opcode(opcode, 0xF, None, Some(0x5), Some(0x5)) => Ok(format!("LD [I] V{:X}", x(opcode))),
         _ if matches_opcode(opcode, 0xF, None, Some(0x6), Some(0x5)) => Ok(format!("LD V{:X} [I]", x(opcode))),
-        _ => Err(format!("{:X} | Unknown opcode (probably data)", opcode))
+        _ => Err(format!("{:X} | UNK", opcode)),
     }
 }
 
-fn matches_opcode(opcode: u16, n1: u8, n2: Option<u8>, n3: Option<u8>, n4: Option<u8>) -> bool { 
-    if (opcode >> 12) as u8 != n1 { return false; }
+fn matches_opcode(opcode: u16, n1: u8, n2: Option<u8>, n3: Option<u8>, n4: Option<u8>) -> bool {
+    if (opcode >> 12) as u8 != n1 {
+        return false;
+    }
     if let Some(n) = n2 {
         if n as u16 != ((opcode & 0x0F00) >> 8) {
             return false;
@@ -60,4 +94,3 @@ fn matches_opcode(opcode: u16, n1: u8, n2: Option<u8>, n3: Option<u8>, n4: Optio
     }
     return true;
 }
-

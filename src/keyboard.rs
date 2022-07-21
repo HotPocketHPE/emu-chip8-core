@@ -7,7 +7,10 @@ pub struct KeyboardState {
 
 impl KeyboardState {
     pub fn new() -> KeyboardState {
-        KeyboardState { key: [false; 0x10], Fx0A: Fx0AStatus::Inactive }
+        KeyboardState {
+            key: [false; 0x10],
+            Fx0A: Fx0AStatus::Inactive,
+        }
     }
 
     pub fn press_key(&mut self, key: u8) {
@@ -34,5 +37,5 @@ pub enum Fx0AStatus {
     Inactive,
     WaitingForPress,
     WaitingForRelease(u8),
-    JustReleased(u8)
+    JustReleased(u8),
 }

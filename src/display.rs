@@ -7,11 +7,17 @@ pub struct DisplayData {
     pub width: usize,
     pub height: usize,
     backing_arr: Vec<bool>,
+    in_vblank: bool,
 }
 
 impl DisplayData {
     fn new(width: usize, height: usize) -> DisplayData {
-        DisplayData { width, height, backing_arr: vec![false; width * height] }
+        DisplayData {
+            width,
+            height,
+            backing_arr: vec![false; width * height],
+            in_vblank: false
+        }
     }
 
     pub fn new_64x32() -> DisplayData {
@@ -26,6 +32,10 @@ impl DisplayData {
         self.backing_arr[x + y * self.width] = val
     }
 
+    pub fn enter_vblank(&mut self) {
+        self.in_vblank = true;
+    }
+
     pub fn clear(&mut self) {
         self.backing_arr.iter_mut().for_each(|e| *e = false)
     }
@@ -35,10 +45,6 @@ impl DisplayData {
             let byte = sprite[sprite_y];
             return (byte >> (7 - sprite_x)) & 1 != 0;
         }
-        
-        //if CHIP8_CONFIG.sprite_clipping && (x >= self.width || y >= self.height) {
-        //    return false;
-        //}
 
         x = x % self.width;
         y = y % self.height;
@@ -68,14 +74,12 @@ impl DisplayData {
         return collision;
     }
 
-
-
     pub fn debug_print(&self) {
         let line: String = repeat('_').take(self.width).collect();
         println!("{}", line);
         for j in 0..self.height {
             for i in 0..self.width {
-                print!("{}", if self.get_pixel(i, j) {'#'} else {'.'});
+                print!("{}", if self.get_pixel(i, j) { '#' } else { '.' });
             }
             print!("\n");
         }

@@ -4,7 +4,7 @@ pub const STACK_START_ADDR: usize = 0x000;
 const STACK_SIZE: usize = 0x10 * 2;
 const FONT_START_ADDR: usize = STACK_START_ADDR + STACK_SIZE;
 const FONT_LETTER_SIZE: usize = 5;
-const FONT_DATA: [u8; FONT_LETTER_SIZE*16] = [
+const FONT_DATA: [u8; FONT_LETTER_SIZE * 0x10] = [
     //0
     0xF0, 0x90, 0x90, 0x90, 0xF0,
     //1
@@ -36,19 +36,17 @@ const FONT_DATA: [u8; FONT_LETTER_SIZE*16] = [
     //E
     0xF0, 0x80, 0xF0, 0x80, 0xF0,
     //F
-    0xF0, 0x80, 0xF0, 0x80, 0x80
+    0xF0, 0x80, 0xF0, 0x80, 0x80,
 ];
 
 #[derive(Debug)]
 pub struct Memory {
-    mem: [u8; MEMSIZE]
+    mem: [u8; MEMSIZE],
 }
 
 impl Memory {
     pub fn with_prog(program: &[u8]) -> Memory {
-        let mut mem = Memory {
-            mem: [0; MEMSIZE],
-        };
+        let mut mem = Memory { mem: [0; MEMSIZE] };
         mem.load_fonts();
         mem.load_program_default(program);
         return mem;
@@ -56,6 +54,10 @@ impl Memory {
 
     pub fn read(&self, addr: u16) -> u8 {
         self.mem[addr as usize]
+    }
+
+    pub fn read_opcode(&self, addr: u16) -> u16 {
+        u16::from_be_bytes([self.read(addr), self.read(addr+1)])
     }
 
     pub fn write(&mut self, addr: u16, val: u8) {
@@ -68,10 +70,15 @@ impl Memory {
 
     fn load_program(&mut self, program: &[u8], start: usize) {
         if program.len() > MEMSIZE - start {
-            panic!("Program is too big to fit in memory! Size: {} Space: {} ({} - {})",
-                program.len(), MEMSIZE-start, MEMSIZE, start);
+            panic!(
+                "Program is too big to fit in memory! Size: {} Space: {} ({} - {})",
+                program.len(),
+                MEMSIZE - start,
+                MEMSIZE,
+                start
+            );
         }
-        self.mem[start..start+program.len()].copy_from_slice(program);
+        self.mem[start..start + program.len()].copy_from_slice(program);
     }
 
     fn load_program_default(&mut self, program: &[u8]) {
@@ -79,11 +86,10 @@ impl Memory {
     }
 
     fn load_fonts(&mut self) {
-        self.mem[FONT_START_ADDR..FONT_START_ADDR+FONT_DATA.len()].copy_from_slice(&FONT_DATA);
+        self.mem[FONT_START_ADDR..FONT_START_ADDR + FONT_DATA.len()].copy_from_slice(&FONT_DATA);
     }
 
     pub fn get_font_addr(num: u8) -> u16 {
         (FONT_START_ADDR + (num as usize * FONT_LETTER_SIZE)) as u16
     }
 }
-
