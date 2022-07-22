@@ -23,5 +23,5 @@ fn unwrap_ok_or_err(x: Result<String, String>) -> String {
 }
 
 fn fmt_opcode(addr: u16, opcode: u16) -> String {
-    format!("{:X} - {}", addr, unwrap_ok_or_err(disassemble_opcode(opcode)))
+    format!("{:X} - {:X} - {}", addr, opcode, unwrap_ok_or_err(disassemble_opcode(opcode)))
 }

@@ -7,7 +7,6 @@ pub struct DisplayData {
     pub width: usize,
     pub height: usize,
     backing_arr: Vec<bool>,
-    in_vblank: bool,
 }
 
 impl DisplayData {
@@ -16,7 +15,6 @@ impl DisplayData {
             width,
             height,
             backing_arr: vec![false; width * height],
-            in_vblank: false
         }
     }
 
@@ -30,10 +28,6 @@ impl DisplayData {
 
     fn set_pixel(&mut self, x: usize, y: usize, val: bool) {
         self.backing_arr[x + y * self.width] = val
-    }
-
-    pub fn enter_vblank(&mut self) {
-        self.in_vblank = true;
     }
 
     pub fn clear(&mut self) {

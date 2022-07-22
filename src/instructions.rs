@@ -272,6 +272,7 @@ fn op_Fx07(cpu: &mut CPUState) {
 }
 
 fn op_Fx0A(cpu: &mut CPUState) {
+    cpu.halt_status = HaltStatus::WaitingFx0A;
     cpu.kbstate.Fx0A = Fx0AStatus::WaitingForPress;
 }
 

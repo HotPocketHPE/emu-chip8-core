@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+#[derive(Debug, Clone, Copy)]
 pub struct KeyboardState {
     pub key: [bool; 0x10],
     pub Fx0A: Fx0AStatus,
@@ -33,6 +34,7 @@ impl KeyboardState {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum Fx0AStatus {
     Inactive,
     WaitingForPress,

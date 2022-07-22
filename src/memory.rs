@@ -39,7 +39,7 @@ const FONT_DATA: [u8; FONT_LETTER_SIZE * 0x10] = [
     0xF0, 0x80, 0xF0, 0x80, 0x80,
 ];
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Memory {
     mem: [u8; MEMSIZE],
 }

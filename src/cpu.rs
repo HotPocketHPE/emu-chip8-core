@@ -1,10 +1,9 @@
 use crate::{
     keyboard::KeyboardState,
-    memory::{PROG_START_ADDR, STACK_START_ADDR}, instructions::{DRW, Fx0AHandler},
+    memory::{PROG_START_ADDR, STACK_START_ADDR, Memory}, instructions::{DRW, Fx0AHandler, OUTER_FUNC_TABLE}, display::DisplayData,
 };
 
-use super::{display::DisplayData, instructions::OUTER_FUNC_TABLE, memory::Memory};
-
+#[derive(Debug, Clone)]
 pub struct CPUState {
     pub pc: u16,
     pub i: u16,
@@ -20,6 +19,7 @@ pub struct CPUState {
     pub halt_status: HaltStatus
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum HaltStatus {
     NotHalted,
     WaitingVblank,
@@ -100,7 +100,7 @@ impl CPUState {
                 if finished {
                     self.halt_status = HaltStatus::NotHalted;
                 }
-                return finished;
+                return true; //if this is false, control never gets passed back to frontend event handler
             },
             HaltStatus::NotHalted => {
                 let highest_nibble = (self.get_opcode() & 0xF000) >> 12;
